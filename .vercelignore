@@ -1,0 +1,12 @@
+.git
+.gitignore
+.npm-cache
+.devserver.err.log
+.devserver.out.log
+.devserver.pid
+node_modules
+dist
+server/portfolio.sqlite
+server/portfolio.sqlite-shm
+server/portfolio.sqlite-wal
+*-firebase-adminsdk-*.json

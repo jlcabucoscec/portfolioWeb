@@ -1,0 +1,14 @@
+node_modules/
+dist/
+uploads/
+.vercel/
+.npm-cache/
+.devserver*.log
+.devserver.pid
+*.log
+.env
+.env.*
+*.local
+server/*.sqlite
+server/*.sqlite-*
+*-firebase-adminsdk-*.json
