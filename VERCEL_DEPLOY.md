@@ -3,7 +3,7 @@
 This project is prepared for:
 
 - `Vite` frontend deployment on Vercel
-- `Express` API deployment through a Vercel serverless function
+- `Express` backend deployment through Vercel's supported root Express entry
 - `Firebase Auth + Firestore + Storage` for app data
 
 ## What Changed
@@ -14,10 +14,10 @@ The repo now uses this deployment shape:
   Shared Express app with all `/api/*` routes
 - `server/index.js`
   Local Node server for development and `npm start`
-- `api/[[...route]].js`
-  Vercel function entry that serves the Express backend
+- `server.js`
+  Root Express entry for Vercel production deployment
 - `vercel.json`
-  Vercel build config and SPA fallback
+  Vercel build config
 
 ## Before You Push
 
@@ -76,9 +76,10 @@ Run:
 
 ```powershell
 npm run build
+npm run build:vercel
 node --check server/index.js
 node --check server/app.js
-node --check api/[[...route]].js
+node --check server.js
 ```
 
 ## GitHub Setup
@@ -102,10 +103,10 @@ git push -u origin main
 ## Vercel Setup
 
 1. Import the GitHub repo into Vercel
-2. Framework preset: `Vite`
+2. Framework preset: let Vercel detect or leave it unset for the mixed Express + Vite setup
 3. Root directory: project root
-4. Build command: `npm run build`
-5. Output directory: `dist`
+4. Build command: `npm run build:vercel`
+5. Leave output directory empty because the Express deployment uses `public/` static assets plus the root Express app
 6. Add the environment variables listed above
 7. Deploy
 

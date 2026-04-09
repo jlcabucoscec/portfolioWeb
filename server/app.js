@@ -27,6 +27,7 @@ import { getFirebaseBucket } from "./firebaseAdmin.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const distPath = path.resolve(__dirname, "../dist");
+const publicPath = path.resolve(__dirname, "../public");
 
 let initializationPromise;
 const appCache = new Map();
@@ -295,20 +296,25 @@ function registerApiRoutes(app) {
   });
 }
 
-function registerStaticRoutes(app) {
-  const hasDist = fs.existsSync(path.join(distPath, "index.html"));
-  if (!hasDist) {
+function registerStaticRoutes(app, staticMode) {
+  const staticBasePath = staticMode === "vercel" ? publicPath : distPath;
+  const entryPath = path.join(staticBasePath, "index.html");
+
+  if (!fs.existsSync(entryPath)) {
     return;
   }
 
-  app.use(express.static(distPath));
+  if (staticMode === "local") {
+    app.use(express.static(staticBasePath));
+  }
+
   app.get("*", (req, res, next) => {
     if (req.path.startsWith("/api")) {
       next();
       return;
     }
 
-    res.sendFile(path.join(distPath, "index.html"), (error) => {
+    res.sendFile(entryPath, (error) => {
       if (error) {
         next(error);
       }
@@ -316,8 +322,8 @@ function registerStaticRoutes(app) {
   });
 }
 
-export async function createApp({ serveStatic = false } = {}) {
-  const cacheKey = serveStatic ? "static" : "api";
+export async function createApp({ staticMode = "none" } = {}) {
+  const cacheKey = `app:${staticMode}`;
   if (appCache.has(cacheKey)) {
     return appCache.get(cacheKey);
   }
@@ -330,8 +336,8 @@ export async function createApp({ serveStatic = false } = {}) {
 
   registerApiRoutes(app);
 
-  if (serveStatic) {
-    registerStaticRoutes(app);
+  if (staticMode !== "none") {
+    registerStaticRoutes(app, staticMode);
   }
 
   app.use((error, _req, res, _next) => {

@@ -1,7 +1,7 @@
 import { createApp } from "./app.js";
 
 const port = Number(process.env.PORT || 3001);
-const app = await createApp({ serveStatic: true });
+const app = await createApp({ staticMode: "local" });
 
 app.listen(port, () => {
   console.log(`Portfolio server running on http://localhost:${port}`);

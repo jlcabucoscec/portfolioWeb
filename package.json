@@ -8,6 +8,7 @@
     "dev:client": "vite",
     "dev:server": "node --watch server/index.js",
     "build": "vite build",
+    "build:vercel": "npm run build && node scripts/prepare-vercel-public.mjs",
     "preview": "vite preview",
     "start": "node server/index.js"
   },

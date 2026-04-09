@@ -6,6 +6,7 @@
 .devserver.pid
 node_modules
 dist
+public
 server/portfolio.sqlite
 server/portfolio.sqlite-shm
 server/portfolio.sqlite-wal
