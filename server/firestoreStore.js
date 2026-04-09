@@ -107,26 +107,35 @@ async function ensureAdminDoc() {
 }
 
 export async function initializeFirebaseStore() {
-  const local = defaultPortfolioData;
+  try {
+    const local = defaultPortfolioData;
 
-  await ensureProfileSeed(local.profile);
-  await seedCollectionIfEmpty("experiences", local.experiences, (item) => `experience-${item.id}`);
-  await seedCollectionIfEmpty(
-    "certifications",
-    local.certifications,
-    (item) => `certification-${item.id}`,
-  );
-  await seedCollectionIfEmpty("skills", local.skills, (item) => `skill-${item.id}`);
-  await seedCollectionIfEmpty("projects", local.projects, (item) => item.slug || `project-${item.id}`);
-  await seedCollectionIfEmpty("contacts", local.contacts, (_item, index) => `contact-${index + 1}`);
-  await seedCollectionIfEmpty(
-    "socialLinks",
-    local.socialLinks,
-    (_item, index) => `social-${index + 1}`,
-  );
-  await seedCollectionIfEmpty("messages", local.messages || [], (item) => `message-${item.id}`);
-  await seedCollectionIfEmpty("mediaAssets", local.mediaAssets || [], (item) => `asset-${item.id}`);
-  await ensureAdminDoc();
+    console.log('[Firestore] Initializing store with default data...');
+    
+    await ensureProfileSeed(local.profile);
+    await seedCollectionIfEmpty("experiences", local.experiences, (item) => `experience-${item.id}`);
+    await seedCollectionIfEmpty(
+      "certifications",
+      local.certifications,
+      (item) => `certification-${item.id}`,
+    );
+    await seedCollectionIfEmpty("skills", local.skills, (item) => `skill-${item.id}`);
+    await seedCollectionIfEmpty("projects", local.projects, (item) => item.slug || `project-${item.id}`);
+    await seedCollectionIfEmpty("contacts", local.contacts, (_item, index) => `contact-${index + 1}`);
+    await seedCollectionIfEmpty(
+      "socialLinks",
+      local.socialLinks,
+      (_item, index) => `social-${index + 1}`,
+    );
+    await seedCollectionIfEmpty("messages", local.messages || [], (item) => `message-${item.id}`);
+    await seedCollectionIfEmpty("mediaAssets", local.mediaAssets || [], (item) => `asset-${item.id}`);
+    await ensureAdminDoc();
+    
+    console.log('[Firestore] Store initialized successfully');
+  } catch (error) {
+    console.error('[Firestore] Initialization failed:', error.message);
+    throw error;
+  }
 }
 
 export async function verifyAdminIdToken(idToken) {

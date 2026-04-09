@@ -48,6 +48,20 @@ function loadServiceAccount() {
     };
   }
 
+  // Log what we're looking for to help with debugging
+  const debugInfo = {
+    foundServiceAccountJson: !!jsonEnv,
+    foundBase64: !!base64JsonEnv,
+    foundExplicitPath: !!explicitPath,
+    defaultPathExists: fs.existsSync(candidatePath),
+    hasProjectId: !!projectId,
+    hasClientEmail: !!clientEmail,
+    hasPrivateKey: !!privateKey,
+    environment: process.env.NODE_ENV || 'development',
+  };
+  
+  console.error('[Firebase] Credentials missing. Debug info:', debugInfo);
+
   throw new Error(
     "Firebase Admin credentials were not found. Add the service account JSON, FIREBASE_SERVICE_ACCOUNT_JSON, or FIREBASE_* env vars.",
   );
@@ -65,11 +79,17 @@ export function getFirebaseAdminApp() {
     return getApps()[0];
   }
 
-  const serviceAccount = loadServiceAccount();
-  return initializeApp({
-    credential: cert(serviceAccount),
-    storageBucket: getBucketName(serviceAccount),
-  });
+  try {
+    const serviceAccount = loadServiceAccount();
+    console.log('[Firebase] Initializing app with project:', serviceAccount.project_id);
+    return initializeApp({
+      credential: cert(serviceAccount),
+      storageBucket: getBucketName(serviceAccount),
+    });
+  } catch (error) {
+    console.error('[Firebase] Failed to initialize app:', error.message);
+    throw error;
+  }
 }
 
 export function getFirebaseAuth() {
