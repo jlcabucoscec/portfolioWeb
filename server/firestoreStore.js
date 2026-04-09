@@ -1,4 +1,4 @@
-import { initializeDatabase, getAdminDashboard as getLocalAdminDashboard } from "./db.js";
+import { defaultPortfolioData } from "./defaultPortfolioData.js";
 import { getFirebaseAuth, getFirebaseDb } from "./firebaseAdmin.js";
 
 const DEFAULT_ADMIN_UID =
@@ -107,8 +107,7 @@ async function ensureAdminDoc() {
 }
 
 export async function initializeFirebaseStore() {
-  initializeDatabase();
-  const local = getLocalAdminDashboard();
+  const local = defaultPortfolioData;
 
   await ensureProfileSeed(local.profile);
   await seedCollectionIfEmpty("experiences", local.experiences, (item) => `experience-${item.id}`);

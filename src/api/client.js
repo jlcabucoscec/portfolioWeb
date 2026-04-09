@@ -14,7 +14,16 @@ export async function fetchJSON(url, options = {}) {
     });
 
     const text = await response.text();
-    const payload = text ? JSON.parse(text) : null;
+    const contentType = response.headers.get("content-type") || "";
+    const payload = text
+      ? contentType.includes("application/json")
+        ? JSON.parse(text)
+        : null
+      : null;
+
+    if (text && !contentType.includes("application/json")) {
+      throw new Error("API returned HTML instead of JSON. Check the Vercel backend deployment and environment variables.");
+    }
 
     if (!response.ok) {
       throw new Error(payload?.message || "Request failed.");

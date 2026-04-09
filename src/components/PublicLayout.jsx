@@ -112,7 +112,7 @@ export default function PublicLayout() {
                 {error}
               </h1>
               <p className="mt-4 max-w-2xl text-[var(--text-soft)]">
-                Start the backend server to load the SQLite-backed portfolio data.
+                Check the Vercel function deployment and Firebase environment variables, then redeploy.
               </p>
             </div>
           </div>

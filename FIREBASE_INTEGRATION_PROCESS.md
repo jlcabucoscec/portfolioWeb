@@ -107,12 +107,11 @@ Connected features:
 
 On server startup:
 
-1. Local SQLite data is still initialized
-2. Firestore is checked
-3. If Firestore is empty, current SQLite data is copied into Firestore
-4. The configured admin UID is also ensured in `admins/{uid}`
+1. Firestore is checked
+2. If Firestore is empty, default portfolio seed data from `server/defaultPortfolioData.js` is copied into Firestore
+3. The configured admin UID is also ensured in `admins/{uid}`
 
-This lets the existing portfolio content move into Firestore without a separate one-time manual migration step.
+This keeps the deployment Vercel-safe while still giving the app a first-load content bootstrap.
 
 ## Important Files Added
 
