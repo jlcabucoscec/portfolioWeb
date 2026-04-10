@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchAdminJSON, uploadAdminAsset } from "../api/client";
+import { fetchAdminJSON } from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
 import ScreenshotUploader from "../components/ScreenshotUploader";
 import { signOutAdmin } from "../lib/firebaseAuth";
-import { compressImageFile } from "../utils/imageUpload";
 
 const emptyProject = {
   id: null,
@@ -126,7 +125,6 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("profile");
   const [toasts, setToasts] = useState([]);
   const [activeModal, setActiveModal] = useState("");
-  const [uploadingAsset, setUploadingAsset] = useState("");
   const [error, setError] = useState("");
 
   function removeToast(id) {
@@ -205,51 +203,6 @@ export default function AdminPage() {
       showSuccess("Profile updated.");
     } catch (saveError) {
       showError(saveError.message);
-    }
-  }
-
-  async function uploadImage(file, kind) {
-    if (!file) {
-      return null;
-    }
-
-    setUploadingAsset(kind);
-    try {
-      const compressed = await compressImageFile(file);
-      return await uploadAdminAsset({
-        kind,
-        fileName: compressed.fileName,
-        dataUrl: compressed.dataUrl,
-        width: compressed.width,
-        height: compressed.height,
-      });
-    } finally {
-      setUploadingAsset("");
-    }
-  }
-
-  async function handleProfileImageUpload(event) {
-    const [file] = Array.from(event.target.files || []);
-    if (!file) {
-      return;
-    }
-
-    try {
-      const asset = await uploadImage(file, "profile");
-      if (!asset) {
-        return;
-      }
-
-      setProfileForm((current) => ({
-        ...current,
-        profileImageUrl: asset.publicUrl,
-        profileImageAlt: current.profileImageAlt || current.name,
-      }));
-      showSuccess("Profile image uploaded. Save profile to apply it.");
-    } catch (uploadError) {
-      showError(uploadError.message);
-    } finally {
-      event.target.value = "";
     }
   }
 
@@ -397,6 +350,7 @@ export default function AdminPage() {
 
   async function saveProject(event) {
     event.preventDefault();
+
     const payload = {
       ...projectForm,
       slug: projectForm.slug || slugify(projectForm.title),
@@ -585,20 +539,8 @@ export default function AdminPage() {
                       }
                     />
                   </label>
-                </div>
-                <div className="col-12">
-                  <label className="field">
-                    <span>Upload Profile Image</span>
-                    <input
-                      accept="image/*"
-                      onChange={handleProfileImageUpload}
-                      type="file"
-                    />
-                  </label>
                   <p className="section-copy mt-2 mb-0">
-                    {uploadingAsset === "profile"
-                      ? "Compressing and uploading profile image..."
-                      : "Uploads are compressed first and stored with reusable asset metadata for future Firebase migration."}
+                    Use a direct image URL for the public profile photo.
                   </p>
                 </div>
                 <div className="col-12">
@@ -1316,36 +1258,6 @@ export default function AdminPage() {
                 screenshots={projectForm.screenshots}
                 thumbnailUrl={projectForm.thumbnailUrl}
                 useThumbnail={projectForm.useThumbnail}
-                uploadingAsset={uploadingAsset === "project"}
-                onUploadImages={async (files) => {
-                  try {
-                    const uploaded = [];
-                    for (const file of files) {
-                      const asset = await uploadImage(file, "project");
-                      if (asset) {
-                        uploaded.push(asset.publicUrl);
-                      }
-                    }
-
-                    if (!uploaded.length) {
-                      return;
-                    }
-
-                    setProjectForm((current) => {
-                      const screenshots = [...current.screenshots, ...uploaded].filter(Boolean);
-                      const uniqueScreenshots = [...new Set(screenshots)];
-                      return {
-                        ...current,
-                        screenshots: uniqueScreenshots,
-                        thumbnailUrl: current.thumbnailUrl || uniqueScreenshots[0] || "",
-                        useThumbnail: current.useThumbnail || Boolean(uniqueScreenshots[0]),
-                      };
-                    });
-                    showSuccess("Project screenshots uploaded. Save project to keep them.");
-                  } catch (uploadError) {
-                    showError(uploadError.message);
-                  }
-                }}
                 onAddImageUrl={(url) => {
                   const value = String(url || "").trim();
                   if (!value) {
