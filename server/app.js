@@ -145,7 +145,7 @@ function registerApiRoutes(app) {
 
       const [signedUrl] = await file.getSignedUrl({
         action: "read",
-        expires: "03-09-2491",
+        expires: new Date('2491-03-09'),
       });
 
       const asset = await createMediaAsset({
