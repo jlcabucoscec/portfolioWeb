@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchAdminJSON, uploadAdminAsset } from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
+import ScreenshotUploader from "../components/ScreenshotUploader";
 import { signOutAdmin } from "../lib/firebaseAuth";
 import { compressImageFile } from "../utils/imageUpload";
 
@@ -122,7 +123,6 @@ export default function AdminPage() {
   const [contactForms, setContactForms] = useState([]);
   const [skillForm, setSkillForm] = useState({ name: "", category: "Core", level: "Advanced" });
   const [projectForm, setProjectForm] = useState(emptyProject);
-  const [screenshotUrlInput, setScreenshotUrlInput] = useState("");
   const [activeTab, setActiveTab] = useState("profile");
   const [toasts, setToasts] = useState([]);
   const [activeModal, setActiveModal] = useState("");
@@ -161,12 +161,10 @@ export default function AdminPage() {
 
   function openProjectModal(entry = null) {
     setProjectForm(entry ? toProjectForm(entry) : emptyProject);
-    setScreenshotUrlInput("");
     setActiveModal("project");
   }
 
   function closeModal() {
-    setScreenshotUrlInput("");
     setActiveModal("");
   }
 
@@ -253,72 +251,6 @@ export default function AdminPage() {
     } finally {
       event.target.value = "";
     }
-  }
-
-  async function handleProjectScreenshotUpload(event) {
-    const files = Array.from(event.target.files || []);
-    if (!files.length) {
-      return;
-    }
-
-    try {
-      const uploaded = [];
-      for (const file of files) {
-        const asset = await uploadImage(file, "project");
-        if (asset) {
-          uploaded.push(asset.publicUrl);
-        }
-      }
-
-      if (!uploaded.length) {
-        return;
-      }
-
-      setProjectForm((current) => {
-        const screenshots = [...current.screenshots, ...uploaded].filter(Boolean);
-        const uniqueScreenshots = [...new Set(screenshots)];
-        return {
-          ...current,
-          screenshots: uniqueScreenshots,
-          thumbnailUrl: current.thumbnailUrl || uniqueScreenshots[0] || "",
-          useThumbnail: current.useThumbnail || Boolean(uniqueScreenshots[0]),
-        };
-      });
-      showSuccess("Project screenshots uploaded. Save project to keep them.");
-    } catch (uploadError) {
-      showError(uploadError.message);
-    } finally {
-      event.target.value = "";
-    }
-  }
-
-  function addProjectScreenshotUrl(url) {
-    const value = String(url || "").trim();
-    if (!value) {
-      return;
-    }
-
-    setProjectForm((current) => {
-      const screenshots = [...new Set([...current.screenshots, value])];
-      return {
-        ...current,
-        screenshots,
-        thumbnailUrl: current.thumbnailUrl || screenshots[0] || "",
-      };
-    });
-  }
-
-  function removeProjectScreenshot(url) {
-    setProjectForm((current) => {
-      const screenshots = current.screenshots.filter((item) => item !== url);
-      const isSelectedThumbnail = current.thumbnailUrl === url;
-      return {
-        ...current,
-        screenshots,
-        thumbnailUrl: isSelectedThumbnail ? screenshots[0] || "" : current.thumbnailUrl,
-        useThumbnail: isSelectedThumbnail ? Boolean(screenshots[0]) : current.useThumbnail,
-      };
-    });
   }
 
   async function saveExperience(event) {
@@ -1380,106 +1312,81 @@ export default function AdminPage() {
             </label>
 
             <div className="admin-media-box">
-              <div className="admin-section-heading">
-                <div>
-                  <p className="eyebrow">Screenshots</p>
-                  <h3>Upload or add project images</h3>
-                  <p className="section-copy">
-                    Uploaded images are compressed first. The thumbnail is selected from these same
-                    screenshots so the data maps cleanly to future cloud storage.
-                  </p>
-                </div>
-              </div>
+              <ScreenshotUploader
+                screenshots={projectForm.screenshots}
+                thumbnailUrl={projectForm.thumbnailUrl}
+                useThumbnail={projectForm.useThumbnail}
+                uploadingAsset={uploadingAsset === "project"}
+                onUploadImages={async (files) => {
+                  try {
+                    const uploaded = [];
+                    for (const file of files) {
+                      const asset = await uploadImage(file, "project");
+                      if (asset) {
+                        uploaded.push(asset.publicUrl);
+                      }
+                    }
 
-              <label className="field">
-                <span>Upload Screenshot Images</span>
-                <input
-                  accept="image/*"
-                  multiple
-                  onChange={handleProjectScreenshotUpload}
-                  type="file"
-                />
-              </label>
-              <div className="admin-inline-upload">
-                <input
-                  className="admin-inline-input"
-                  placeholder="https://example.com/screenshot.jpg"
-                  value={screenshotUrlInput}
-                  onChange={(event) => setScreenshotUrlInput(event.target.value)}
-                />
-                <button
-                  className="button-secondary"
-                  onClick={() => {
-                    addProjectScreenshotUrl(screenshotUrlInput);
-                    setScreenshotUrlInput("");
-                  }}
-                  type="button"
-                >
-                  Add Image URL
-                </button>
-              </div>
-              <p className="section-copy mb-0">
-                {uploadingAsset === "project"
-                  ? "Compressing and uploading screenshot..."
-                  : "You can upload files now and later swap the same structure to Firebase Storage."}
-              </p>
+                    if (!uploaded.length) {
+                      return;
+                    }
 
-              <div className="admin-screenshot-grid">
-                {projectForm.screenshots.length ? (
-                  projectForm.screenshots.map((image) => {
-                    const isThumbnail = projectForm.thumbnailUrl === image && projectForm.useThumbnail;
-                    return (
-                      <article key={image} className="admin-screenshot-card">
-                        <div className="admin-screenshot-thumb">
-                          <img alt="" src={image} />
-                        </div>
-                        <div className="admin-screenshot-actions">
-                          <button
-                            className={`button-secondary${isThumbnail ? " active" : ""}`}
-                            onClick={() =>
-                              setProjectForm((current) => ({
-                                ...current,
-                                thumbnailUrl: image,
-                                useThumbnail: true,
-                              }))
-                            }
-                            type="button"
-                          >
-                            {isThumbnail ? "Thumbnail Selected" : "Set as Thumbnail"}
-                          </button>
-                          <button
-                            className="button-secondary danger"
-                            onClick={() => removeProjectScreenshot(image)}
-                            type="button"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </article>
-                    );
-                  })
-                ) : (
-                  <div className="admin-image-fallback admin-image-fallback-gradient">
-                    <span className="material-symbols-outlined">imagesmode</span>
-                    <strong>No screenshots added yet</strong>
-                  </div>
-                )}
-              </div>
-
-              <div className="button-row mt-0">
-                <button
-                  className="button-secondary"
-                  onClick={() =>
-                    setProjectForm((current) => ({
-                      ...current,
-                      useThumbnail: false,
-                    }))
+                    setProjectForm((current) => {
+                      const screenshots = [...current.screenshots, ...uploaded].filter(Boolean);
+                      const uniqueScreenshots = [...new Set(screenshots)];
+                      return {
+                        ...current,
+                        screenshots: uniqueScreenshots,
+                        thumbnailUrl: current.thumbnailUrl || uniqueScreenshots[0] || "",
+                        useThumbnail: current.useThumbnail || Boolean(uniqueScreenshots[0]),
+                      };
+                    });
+                    showSuccess("Project screenshots uploaded. Save project to keep them.");
+                  } catch (uploadError) {
+                    showError(uploadError.message);
                   }
-                  type="button"
-                >
-                  Use Gradient Thumbnail
-                </button>
-              </div>
+                }}
+                onAddImageUrl={(url) => {
+                  const value = String(url || "").trim();
+                  if (!value) {
+                    return;
+                  }
+
+                  setProjectForm((current) => {
+                    const screenshots = [...new Set([...current.screenshots, value])];
+                    return {
+                      ...current,
+                      screenshots,
+                      thumbnailUrl: current.thumbnailUrl || screenshots[0] || "",
+                    };
+                  });
+                }}
+                onRemoveScreenshot={(url) => {
+                  setProjectForm((current) => {
+                    const screenshots = current.screenshots.filter((item) => item !== url);
+                    const isSelectedThumbnail = current.thumbnailUrl === url;
+                    return {
+                      ...current,
+                      screenshots,
+                      thumbnailUrl: isSelectedThumbnail ? screenshots[0] || "" : current.thumbnailUrl,
+                      useThumbnail: isSelectedThumbnail ? Boolean(screenshots[0]) : current.useThumbnail,
+                    };
+                  });
+                }}
+                onSetThumbnail={(url) => {
+                  setProjectForm((current) => ({
+                    ...current,
+                    thumbnailUrl: url,
+                    useThumbnail: true,
+                  }));
+                }}
+                onReorderScreenshots={(reordered) => {
+                  setProjectForm((current) => ({
+                    ...current,
+                    screenshots: reordered,
+                  }));
+                }}
+              />
             </div>
 
             <label className="toggle-field">
